@@ -121,7 +121,9 @@ app.delete("/api/passwords", async (req, res) => {
 // This should come AFTER all your API routes
 
 // Serve static files from dist
+
 app.use(express.static(path.join(__dirname, "dist")));
+
 
 // The "catch-all" handler: for any request that doesn't match one above, send back index.html
 // Place this BELOW your API routes
