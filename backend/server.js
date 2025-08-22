@@ -6,7 +6,6 @@ const app = express();
 const port = 3000;
 import path from "path";
 import { fileURLToPath } from "url";
-import express from "express";
 
 
 
