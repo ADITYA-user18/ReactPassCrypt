@@ -8,26 +8,19 @@ import { fileURLToPath } from "url";
 // --- Config ---
 dotenv.config();
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000; // Use environment variable for port
 
 // --- File path setup ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Serve static files from dist
-app.use(express.static(path.join(__dirname, "dist")));
-
-// Catch-all to serve index.html
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
-});
-
 // --- Middleware ---
+// Apply middleware BEFORE your API routes
 app.use(cors());
 app.use(express.json());
 
 // --- Connect to MongoDB ---
-const mongoURI = process.env.MONGO_URI; 
+const mongoURI = process.env.MONGO_URI;
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("✅ MongoDB connected successfully"))
   .catch(err => console.error("❌ MongoDB connection error:", err));
@@ -42,9 +35,11 @@ const passwordSchema = new mongoose.Schema({
 
 const Password = mongoose.model("Password", passwordSchema);
 
-// --- Routes ---
+// --- API Routes ---
+// These routes should come before the static file serving and catch-all
+
 // GET all passwords
-app.get("/", async (req, res) => {
+app.get("/api/passwords", async (req, res) => {
   try {
     const passwords = await Password.find({});
     res.json(passwords);
@@ -54,8 +49,8 @@ app.get("/", async (req, res) => {
 });
 
 // POST a new password
-app.post("/", async (req, res) => {
-  console.log("POST /: Received request body:", req.body);
+app.post("/api/passwords", async (req, res) => {
+  console.log("POST /api/passwords: Received request body:", req.body);
 
   if (!req.body || !req.body.id) {
     return res.status(400).json({ message: "Request body is missing or malformed." });
@@ -70,15 +65,15 @@ app.post("/", async (req, res) => {
 
   try {
     const savedPassword = await password.save();
-    console.log("✅ POST /: Saved password successfully:", savedPassword);
+    console.log("✅ POST /api/passwords: Saved password successfully:", savedPassword);
     res.status(201).json(savedPassword);
   } catch (error) {
-    console.error("❌ POST /: Error saving password:", error);
+    console.error("❌ POST /api/passwords: Error saving password:", error);
 
     if (error.code === 11000) {
-      return res.status(409).json({ 
+      return res.status(409).json({
         message: "Duplicate key error: A password with this ID already exists.",
-        duplicateKey: error.keyValue 
+        duplicateKey: error.keyValue
       });
     }
 
@@ -91,7 +86,7 @@ app.post("/", async (req, res) => {
 });
 
 // PUT (Update) a password
-app.put("/", async (req, res) => {
+app.put("/api/passwords", async (req, res) => {
   const { id, site, username, password } = req.body;
   try {
     const updatedPassword = await Password.findOneAndUpdate(
@@ -109,7 +104,7 @@ app.put("/", async (req, res) => {
 });
 
 // DELETE a password
-app.delete("/", async (req, res) => {
+app.delete("/api/passwords", async (req, res) => {
   try {
     const deletedPassword = await Password.findOneAndDelete({ id: req.body.id });
     if (!deletedPassword) {
@@ -120,6 +115,19 @@ app.delete("/", async (req, res) => {
     res.status(500).json({ message: "Error deleting password", error: error.message });
   }
 });
+
+
+// --- Frontend Static Serving ---
+// This should come AFTER all your API routes
+
+// Serve static files from dist
+app.use(express.static(path.join(__dirname, "dist")));
+
+// The "catch-all" handler: for any request that doesn't match one above, send back index.html
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
+
 
 // --- Start the server ---
 app.listen(port, () => {
