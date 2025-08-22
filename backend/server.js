@@ -124,7 +124,9 @@ app.delete("/api/passwords", async (req, res) => {
 app.use(express.static(path.join(__dirname, "dist")));
 
 // The "catch-all" handler: for any request that doesn't match one above, send back index.html
-app.get("*", (req, res) => {
+// Place this BELOW your API routes
+app.get("/*", (req, res) => {
+  if (req.path.startsWith("/api")) return res.status(404).send("API route not found");
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
