@@ -1,4 +1,4 @@
-🔐 Password Manager - MERN Stack Project
+🔐 Password Manager - MERN Stack Projec
 
 Securely store and manage all your passwords in one place!
 Never forget passwords again—this app is built to provide a modern, reliable, and secure password management solution.
